@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+</head>
+
+<body>
+	<h1>Makeshift's Super Duper Lazy Salesman Solver for Elite Dangerous</h1>
+	<h2>This little script calculates the fastest route through all systems provided</h2>
+	<section id="tempbody">
+	<input type="file" id="fileinput" />
+	<h3>Please pick a list of all systems. You can use <a href="https://eddb.io/api">this</a> as a source for them.</h3><br>
+		<h4>systems_populated.json will parse considerably faster<br>
+		systems.json may fail to parse - Large files are not yet properly supported</h4>
+		<h1 id="load"></h1>
+	</section>
+
+    <script>
+      document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+
+      function readSingleFile(evt) {
+          var f = evt.target.files[0];
+
+          if (f) {
+              var r = new FileReader();
+              r.onload = function(e) {
+                  allSystems = JSON.parse(e.target.result);
+                  document.getElementById("tempbody").innerHTML = secondHTML;
+              }
+              r.onprogress = updateProgress;
+              r.readAsText(f);
+          } else {
+              alert("Failed to load file");
+          }
+       }
+       function updateProgress(evt) {
+    // evt is an ProgressEvent.
+    if (evt.lengthComputable) {
+      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+      // Increase the progress bar length.
+      if (percentLoaded < 100) {
+        document.getElementById("load").innerHTML = percentLoaded + "% Loaded..."
+      }
+    }
+  }
+
+          var secondHTML = `<table border="1">
+								<tr>
+									<th><p>Your starting system:</p>
+										<input id="startsys" value="lave"></input></th>
+									<th><p>Provide a comma separated list with all systems you wish to visit, with no spaces between.</p>
+										<input id="syslist" size="80" value="witchhaul,fujin,39 tauri,george pantazis,zeessze,altair,chi eridani,lave,orrere,diso,uszaa,fake"></input>
+										<br><input type="submit" onclick="splitText()"></input></th>
+								</tr>
+							</table>
+							<p id="output"></p>
+							<p id="errors"><b>Errors: </b></p>
+							<p>Execution Time: <a id="calctime"></a>ms</p>`
+
+          var allSystems;
+
+          function splitText() {
+              var start = performance.now();
+              var input = document.getElementById("syslist").value.split(",");
+              var matchSystems = [];
+              var output = "";
+              for (var i = 0; i < input.length; i++) {
+                  var checkMatch = findSystem(input[i]);
+                  if (checkMatch != undefined) {
+                      matchSystems.push(checkMatch);
+                  }
+              }
+              calculateDistances(matchSystems, start)
+          }
+
+          function findSystem(input) {
+              var found = false;
+              for (var i = 0; i < allSystems.length && !found; i++) {
+                  if (input.toLowerCase() == allSystems[i].name.toLowerCase()) {
+                      return allSystems[i];
+                      found = true;
+                  } else if (i == allSystems.length - 1) {
+                      document.getElementById("errors").innerHTML += `<br><b>${input}</b> requested but not found`;
+                  }
+              }
+          }
+
+          function calculateDistances(systems, start) {
+              var startSystem = findSystem(document.getElementById("startsys").value);
+
+              var ordered = [];
+              var initial = remainingSystems(startSystem, systems);
+              ordered.push(initial);
+              var initialIndex = systems.indexOf(initial);
+              if (initialIndex > -1) {
+                  systems.splice(initialIndex, 1);
+              }
+              var systemLengthBackup = systems.length;
+              for (var i = 0; i < systemLengthBackup; i++) {
+                  var nextSystem = remainingSystems(ordered[ordered.length - 1], systems);
+                  systems.splice(systems.indexOf(nextSystem), 1);
+                  ordered.push(nextSystem);
+              }
+
+              var end = performance.now();
+              var time = end - start;
+              document.getElementById("calctime").innerHTML = time.toFixed(2);
+              buildTable(ordered);
+          }
+
+          function buildTable(ordered) {
+              var html = "<table><tr><th>System</th><th>Distance From Last</th></tr>";
+              for (var i = 0; i < ordered.length; i++) {
+                  html += `<tr><td>${ordered[i].name}</td><td>${ordered[i].fromStartLocation}`;
+              }
+              document.getElementById("output").innerHTML = html + "</table>";
+          }
+
+          function remainingSystems(start, rest) {
+              var afterStart = {
+                  fromStartLocation: Number.MAX_SAFE_INTEGER
+              };
+              for (var i = 0; i < rest.length; i++) {
+                  rest[i].fromStartLocation = getDistance(start, rest[i]);
+                  if (rest[i].fromStartLocation < afterStart.fromStartLocation) {
+                      afterStart = rest[i];
+                  }
+              }
+              return afterStart;
+          }
+
+          function getDistance(system1, system2) {
+              return Number(Math.sqrt(((system2.x - system1.x) ** 2) + ((system2.y - system1.y) ** 2) + ((system2.z - system1.z) ** 2)).toFixed(2))
+          }
+    </script>
+</body>
+
+</html>
