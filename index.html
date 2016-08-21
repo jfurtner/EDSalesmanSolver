@@ -62,6 +62,7 @@
           function splitText() {
               var start = performance.now();
               var input = document.getElementById("syslist").value.split(",");
+              document.getElementById("errors").innerHTML = "<b>Errors: </b>";
               var matchSystems = [];
               var output = "";
               for (var i = 0; i < input.length; i++) {
