@@ -17,14 +17,14 @@
 
     <script>
       document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
-
       function readSingleFile(evt) {
           var f = evt.target.files[0];
-
           if (f) {
               var r = new FileReader();
               r.onload = function(e) {
-                  allSystems = JSON.parse(e.target.result);
+                  allSystems = JSON.parse(e.target.result).map(function (s) {
+                      return {name: s.name.toLowerCase(), x: s.x, y: s.y, z: s.z};
+                  });
                   document.getElementById("tempbody").innerHTML = secondHTML;
               }
               r.onprogress = updateProgress;
@@ -43,7 +43,6 @@
       }
     }
   }
-
           var secondHTML = `<table border="1">
 								<tr>
 									<th><p>Your starting system:</p>
@@ -56,28 +55,30 @@
 							<p id="output"></p>
 							<p id="errors"><b>Errors: </b></p>
 							<p>Execution Time: <a id="calctime"></a>ms</p>`
-
           var allSystems;
-
           function splitText() {
               var start = performance.now();
-              var input = document.getElementById("syslist").value.split(",");
+              var input = document.getElementById("syslist")
+                  .value
+                  .split(",")
+                  .map(function (s) {
+                      return s.trim().toLowerCase()
+                  });
               document.getElementById("errors").innerHTML = "<b>Errors: </b>";
               var matchSystems = [];
               var output = "";
               for (var i = 0; i < input.length; i++) {
                   var checkMatch = findSystem(input[i]);
-                  if (checkMatch != undefined) {
+                  if (typeof(checkMatch) !== "undefined") {
                       matchSystems.push(checkMatch);
                   }
               }
               calculateDistances(matchSystems, start)
           }
-
           function findSystem(input) {
               var found = false;
               for (var i = 0; i < allSystems.length && !found; i++) {
-                  if (input.toLowerCase() == allSystems[i].name.toLowerCase()) {
+                  if (input === allSystems[i].name) {
                       return allSystems[i];
                       found = true;
                   } else if (i == allSystems.length - 1) {
@@ -85,10 +86,8 @@
                   }
               }
           }
-
           function calculateDistances(systems, start) {
               var startSystem = findSystem(document.getElementById("startsys").value);
-
               var ordered = [];
               var initial = remainingSystems(startSystem, systems);
               ordered.push(initial);
@@ -102,21 +101,18 @@
                   systems.splice(systems.indexOf(nextSystem), 1);
                   ordered.push(nextSystem);
               }
-
               var end = performance.now();
               var time = end - start;
               document.getElementById("calctime").innerHTML = time.toFixed(2);
               buildTable(ordered);
           }
-
           function buildTable(ordered) {
               var html = "<table><tr><th>System</th><th>Distance From Last</th></tr>";
               for (var i = 0; i < ordered.length; i++) {
-                  html += `<tr><td>${ordered[i].name}</td><td>${ordered[i].fromStartLocation}`;
+                  html += `<tr><td>${ordered[i].name}</td><td>${Math.sqrt(ordered[i].fromStartLocation).toFixed(2)}`;
               }
               document.getElementById("output").innerHTML = html + "</table>";
           }
-
           function remainingSystems(start, rest) {
               var afterStart = {
                   fromStartLocation: Number.MAX_SAFE_INTEGER
@@ -129,9 +125,8 @@
               }
               return afterStart;
           }
-
           function getDistance(system1, system2) {
-              return Number(Math.sqrt(((system2.x - system1.x) ** 2) + ((system2.y - system1.y) ** 2) + ((system2.z - system1.z) ** 2)).toFixed(2))
+              return ((system2.x - system1.x) ** 2) + ((system2.y - system1.y) ** 2) + ((system2.z - system1.z) ** 2);
           }
     </script>
 </body>
