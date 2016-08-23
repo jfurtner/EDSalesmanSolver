@@ -1,0 +1,14 @@
+{
+  "name": "eddbupdater",
+  "version": "0.0.1",
+  "description": "Converts Elite Dangerous system lists from eddb JSON to sql",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Connor Bell",
+  "license": "ISC",
+  "dependencies": {
+    "oboe": "^2.1.2"
+  }
+}
