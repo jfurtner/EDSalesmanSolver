@@ -9,6 +9,7 @@
   "author": "Connor Bell",
   "license": "ISC",
   "dependencies": {
+    "mysql": "^2.11.1",
     "oboe": "^2.1.2"
   }
 }

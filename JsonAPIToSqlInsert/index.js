@@ -1,11 +1,20 @@
 var https = require('https');
 var fs = require('fs');
 var oboe = require('oboe');
+var mysql = require('mysql');
 
 var table = "edsystems";
 
 var dontSkipDownload = true;
-var wstream = fs.createWriteStream('output.sql');
+var wstream;
+var initial = false;
+
+var connection = mysql.createConnection({
+    host: 'localhost',
+    user: process.argv[5],
+    password: process.argv[6],
+    database: 'elitedangerous'
+});
 
 dealWithArgs(function(arg) {
     downloadFile(arg, function(filename) {
@@ -25,7 +34,21 @@ function dealWithArgs(cb) {
         dontSkipDownload = false;
     }
 
+    if (process.argv[4] == 'true') {
+        console.log("We're generating initial insert statements");
+        //We're generating inserts and not doing updates
+        initial = true;
+        setupFS();
+    } else {
+        console.log("We're updating our DB");
+    }
+
     cb(arg);
+}
+
+function setupFS() {
+    wstream = fs.createWriteStream('output.sql');
+    wstream.write(`INSERT INTO ${table} VALUES \n`);
 }
 
 function downloadFile(arg, cb) {
@@ -49,9 +72,9 @@ function downloadFile(arg, cb) {
         var request = https.get(url, function(response) {
             response.pipe(file);
             file.on('finish', function() {
-                file.close(cb(filename));
                 var time = clock(start) / 1000;
                 console.log(`Download took ${time} seconds`)
+                file.close(cb(filename));
             });
         }).on('error', function(err) {
             fs.unlink(filename); 
@@ -67,7 +90,6 @@ function toLower(s) {
 	return s.toLowerCase();
 }
 
-//Doesn't work with larger file yet, 256mb limit, build something to split files.
 function readFile(file) {
     var start = clock();
     var count = 0;
@@ -75,7 +97,12 @@ function readFile(file) {
     oboe(fs.createReadStream(file))
     .node('name', toLower)
     .node('!.*', function(moduleJson, path) {
-    	writeToFile(moduleJson, count);
+        if (initial) {
+            //This is horrifically slow. Potentially buffer a couple thousand lines at a time before writing in chunks?
+    	   writeToFile(moduleJson, count);
+        } else {
+            updateExistingDB(moduleJson, count);
+        }
     	count++;
     	return oboe.drop;
     })
@@ -90,7 +117,17 @@ function readFile(file) {
     });
 }
 
-wstream.write(`INSERT INTO ${table} VALUES \n`);
+function updateExistingDB(filepart, count) {
+    if (count == 0) {
+        connection.connect();
+    }
+    connection.query(`SELECT * FROM ${table} WHERE name = '${filepart.name}';`, function(err, rows, fields) {
+        if (err) throw err;
+        console.log(`SELECT * FROM ${table} WHERE name = '${filepart.name}';`);
+        console.log(rows);
+        console.log(fields);
+    });
+}
 
 function writeToFile(filepart, count) {
 	if (count == 0) {
