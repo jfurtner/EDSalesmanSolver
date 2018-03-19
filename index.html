@@ -46,9 +46,9 @@
           var secondHTML = `<table border="1">
 								<tr>
 									<th><p>Your starting system:</p>
-										<input id="startsys" value="lave"></input></th>
+										<input id="startsys" value="ubv 15076" onkeyup="keypress(event)"></input></th>
 									<th><p>Provide a comma separated list with all systems you wish to visit, with no spaces between.</p>
-										<input id="syslist" size="80" value="witchhaul,fujin,39 tauri,george pantazis,zeessze,altair,chi eridani,lave,orrere,diso,uszaa,fake"></input>
+										<input id="syslist" size="80" value="" onkeyup="keypress(event)"></input>
 										<br><input type="submit" onclick="splitText()"></input></th>
 								</tr>
 							</table>
@@ -56,6 +56,13 @@
 							<p id="errors"><b>Errors: </b></p>
 							<p>Execution Time: <a id="calctime"></a>ms</p>`
           var allSystems;
+		  function keypress(event) {
+			var x = event.which || event.keyCode;
+			if (x === 13)
+			{
+				splitText();
+			}
+		  }
           function splitText() {
               var start = performance.now();
               var input = document.getElementById("syslist")
@@ -80,7 +87,7 @@
               for (var i = 0; i < allSystems.length && !found; i++) {
                   if (input === allSystems[i].name) {
                       return allSystems[i];
-                      found = true;
+                      //found = true;
                   } else if (i == allSystems.length - 1) {
                       document.getElementById("errors").innerHTML += `<br><b>${input}</b> requested but not found`;
                   }
