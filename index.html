@@ -43,12 +43,19 @@
       }
     }
   }
+ 
+var startingSystem = getParameterByName('start');
+if (startingSystem === null || startingSystem === '')
+	startingSystem = 'lave';
+var list = getParameterByName('dest');
+if (list === null)
+	list = '';
           var secondHTML = `<table border="1">
 								<tr>
 									<th><p>Your starting system:</p>
-										<input id="startsys" value="ubv 15076" onkeyup="keypress(event)"></input></th>
+										<input id="startsys" value="` + startingSystem + `" onkeyup="keypress(event)"></input></th>
 									<th><p>Provide a comma separated list with all systems you wish to visit, with no spaces between.</p>
-										<input id="syslist" size="80" value="" onkeyup="keypress(event)"></input>
+										<input id="syslist" size="80" value="` + list + `" onkeyup="keypress(event)"></input>
 										<br><input type="submit" onclick="splitText()"></input></th>
 								</tr>
 							</table>
@@ -56,6 +63,15 @@
 							<p id="errors"><b>Errors: </b></p>
 							<p>Execution Time: <a id="calctime"></a>ms</p>`
           var allSystems;
+		  function getParameterByName(name, url) {
+			if (!url) url = window.location.href;
+			name = name.replace(/[\[\]]/g, "\\$&");
+			var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+				results = regex.exec(url);
+			if (!results) return null;
+			if (!results[2]) return '';
+			return decodeURIComponent(results[2].replace(/\+/g, " "));
+		  }
 		  function keypress(event) {
 			var x = event.which || event.keyCode;
 			if (x === 13)
